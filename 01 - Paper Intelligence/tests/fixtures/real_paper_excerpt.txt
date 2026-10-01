@@ -1,0 +1,5 @@
+Abstract
+
+The dominant sequence transduction models are based on complex recurrent or convolutional neural networks in an encoder and decoder configuration. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.
+
+Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best result by over 2 BLEU.
