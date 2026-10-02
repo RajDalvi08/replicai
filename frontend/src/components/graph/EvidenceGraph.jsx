@@ -12,8 +12,14 @@ const STATUS = {
 
 const EDGE_COLOR = {
   verified: '#22c55e',
-  partial: '#eab308',
+  partial: '#f59e0b',
   mismatch: '#ef4444',
+}
+
+const EDGE_DASH = {
+  verified: undefined,
+  partial: '8 4',
+  mismatch: '4 3 1 3',
 }
 
 function decorateEdges(rawEdges, rawNodes) {
@@ -25,7 +31,8 @@ function decorateEdges(rawEdges, rawNodes) {
       animated: state === 'partial' || state === 'mismatch',
       style: {
         stroke: EDGE_COLOR[state] || '#9ca3af',
-        strokeWidth: state === 'mismatch' ? 2 : 1.5,
+        strokeWidth: state === 'mismatch' ? 2.5 : state === 'partial' ? 2 : 1.5,
+        strokeDasharray: EDGE_DASH[state],
       },
     }
   })
