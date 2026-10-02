@@ -1,0 +1,48 @@
+export const mockRuns = {
+  experimentId: 'E2',
+  sandbox: 'Docker Sandbox',
+  runCount: 3,
+  status: 'COMPLETED',
+  mean: 84.23,
+  std: 0.15,
+  paperResult: 87.6,
+  gap: -3.37,
+  items: [
+    {
+      id: 'RUN-001',
+      accuracy: 84.1,
+      status: 'COMPLETE',
+      duration: '01:14:22',
+    },
+    {
+      id: 'RUN-002',
+      accuracy: 84.4,
+      status: 'COMPLETE',
+      duration: '01:12:08',
+    },
+    {
+      id: 'RUN-003',
+      accuracy: 84.2,
+      status: 'COMPLETE',
+      duration: '01:13:41',
+    },
+  ],
+  logLines: [
+    '$ docker run replicai/e2',
+    'loading dataset...',
+    'loading model...',
+    'training...',
+    'step 10000 / 100000  loss=2.41',
+    'step 50000 / 100000  loss=1.18',
+    'evaluating...',
+    'accuracy: 84.1%',
+    'completed.',
+  ],
+  comparison: [
+    { name: 'Paper', value: 87.6, fill: '#8B5CF6' },
+    { name: 'Run 1', value: 84.1, fill: '#A3A3A3' },
+    { name: 'Run 2', value: 84.4, fill: '#A3A3A3' },
+    { name: 'Run 3', value: 84.2, fill: '#A3A3A3' },
+    { name: 'Mean', value: 84.23, fill: '#22C55E' },
+  ],
+}
