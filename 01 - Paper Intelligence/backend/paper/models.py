@@ -23,9 +23,7 @@ class Paper(Base):
     filename = Column(String(255), nullable=False)
     sha256 = Column(String(128), nullable=False, index=True)
     page_count = Column(Integer, nullable=False)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     experiments = relationship(
         "ExperimentRecord", back_populates="paper", cascade="all, delete-orphan"
@@ -41,9 +39,7 @@ class ExperimentRecord(Base):
     title = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
     extraction_confidence = Column(Float, nullable=False, default=0.0)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     paper = relationship("Paper", back_populates="experiments")
     parameters = relationship(
@@ -62,9 +58,7 @@ class ExperimentParameter(Base):
     field_name = Column(String(128), nullable=False)
     field_value = Column(JSON, nullable=True)
     value_type = Column(String(32), nullable=True)
-    observed_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    observed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     experiment = relationship("ExperimentRecord", back_populates="parameters")
 
@@ -81,8 +75,6 @@ class EvidenceRecord(Base):
     source_label = Column(String(128), nullable=True)
     quote = Column(Text, nullable=True)
     confidence = Column(Float, nullable=True)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     experiment = relationship("ExperimentRecord", back_populates="evidences")

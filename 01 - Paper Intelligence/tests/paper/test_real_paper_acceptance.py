@@ -7,9 +7,7 @@ from backend.paper.service import PaperAnalysisService
 
 
 def test_real_paper_excerpt_is_processed_with_valid_evidence():
-    fixture_text = Path("tests/fixtures/real_paper_excerpt.txt").read_text(
-        encoding="utf-8"
-    )
+    fixture_text = Path("tests/fixtures/real_paper_excerpt.txt").read_text(encoding="utf-8")
     pdf_path = Path("tests/fixtures/acceptance_paper.pdf")
     doc = fitz.open()
     page = doc.new_page()

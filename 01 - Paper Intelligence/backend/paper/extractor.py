@@ -20,9 +20,7 @@ def _collect_pages(document: fitz.Document) -> list[dict[str, Any]]:
         cleaned_text = _normalize_page_text(page_text)
         warnings: list[str] = []
         if not cleaned_text:
-            warnings.append(
-                f"Page {page_index + 1} contains no extractable text; OCR is required."
-            )
+            warnings.append(f"Page {page_index + 1} contains no extractable text; OCR is required.")
         pages.append(
             {
                 "page": page_index + 1,

@@ -115,14 +115,10 @@ class PaperAnalysisService:
         for experiment_payload in experiment_payloads:
             parsed_model = Experiment.model_validate(experiment_payload)
             for item in parsed_model.evidence:
-                result = validate_evidence(
-                    item.model_dump(mode="json"), page_count, page_texts
-                )
+                result = validate_evidence(item.model_dump(mode="json"), page_count, page_texts)
                 if not result["valid"]:
                     parsed_model.warnings.extend(result["issues"])
-            parsed_model.extraction_confidence = self._score_experiment(
-                parsed_model, page_count
-            )
+            parsed_model.extraction_confidence = self._score_experiment(parsed_model, page_count)
             validated_experiments.append(parsed_model)
 
         paper_record = Paper(

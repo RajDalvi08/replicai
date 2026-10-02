@@ -20,9 +20,7 @@ def test_experiment_schema_accepts_missing_optional_values():
         dropout=None,
         random_seed=42,
         metric="accuracy",
-        reported_results={
-            "accuracy": {"value": 87.6, "unit": "%", "higher_is_better": True}
-        },
+        reported_results={"accuracy": {"value": 87.6, "unit": "%", "higher_is_better": True}},
         procedure="Train for 50 epochs.",
         evidence=[
             ExperimentEvidence(
@@ -72,9 +70,7 @@ def test_synthetic_experiment_placeholder():
         dropout=None,
         random_seed=7,
         metric="loss",
-        reported_results={
-            "loss": {"value": 0.72, "unit": "", "higher_is_better": False}
-        },
+        reported_results={"loss": {"value": 0.72, "unit": "", "higher_is_better": False}},
         procedure="Train on MNIST.",
         evidence=[],
         extraction_confidence=0.7,
