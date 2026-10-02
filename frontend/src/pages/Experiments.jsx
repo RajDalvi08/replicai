@@ -1,72 +1,98 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getExperiments as fetchExperiments } from '../api/client'
 import { useExperiment } from '../experiment'
-import { getExperiments } from '../data'
 import DataTable from '../components/ui/DataTable'
 import Input from '../components/ui/Input'
 import SectionHeader from '../components/ui/SectionHeader'
-import StatusBadge from '../components/ui/StatusBadge'
 
-const filters = ['ALL', 'READY', 'WARNING', 'FAILED']
+function display(value, suffix = '') {
+  return value === null || value === undefined || value === '' ? 'Not available' : `${value}${suffix}`
+}
 
-function fmt(value, suffix = '') {
-  return value === null || value === undefined ? '—' : `${value}${suffix}`
+function metricValue(experiment) {
+  const result = Object.values(experiment.reported_results || {})[0]
+  return result?.value ?? result ?? null
 }
 
 export default function Experiments() {
   const navigate = useNavigate()
-  const experiments = getExperiments()
-  const { selectedExperimentId, setSelectedExperimentId } = useExperiment()
-  const [filter, setFilter] = useState('ALL')
+  const {
+    paperId,
+    experiments,
+    selectedExperimentId,
+    setExperiments,
+    setSelectedExperimentId,
+  } = useExperiment()
   const [query, setQuery] = useState('')
+  const [loadedPaperId, setLoadedPaperId] = useState(null)
+  const [requestError, setRequestError] = useState(null)
 
-  const rows = useMemo(() => {
-    return experiments.filter((item) => {
-      const matchesFilter = filter === 'ALL' || item.status === filter
-      const haystack = `${item.id} ${item.name}`.toLowerCase()
-      return matchesFilter && haystack.includes(query.toLowerCase())
-    })
-  }, [experiments, filter, query])
+  useEffect(() => {
+    if (!paperId) return
+    let active = true
+    fetchExperiments(paperId)
+      .then((response) => {
+        if (active) {
+          setRequestError(null)
+          setExperiments(response)
+        }
+      })
+      .catch((requestError) => {
+        if (active) setRequestError({ paperId, message: requestError.message || 'Unable to load experiments.' })
+      })
+      .finally(() => {
+        if (active) setLoadedPaperId(paperId)
+      })
+    return () => {
+      active = false
+    }
+  }, [paperId, setExperiments])
+
+  const rows = useMemo(
+    () =>
+      (experiments || [])
+        .map((item) => ({
+          ...item,
+          id: item.experiment_key || item.experiment_id,
+          name: item.title || item.description || 'Extracted experiment',
+        }))
+        .filter((item) => `${item.id} ${item.name}`.toLowerCase().includes(query.toLowerCase())),
+    [experiments, query],
+  )
 
   const columns = [
     { key: 'id', label: 'ID' },
-    { key: 'name', label: 'NAME', render: (row) => row.name },
-    { key: 'status', label: 'STATUS', render: (row) => <StatusBadge status={row.status} /> },
-    { key: 'readiness', label: 'READINESS', render: (row) => `${row.readiness}%` },
-    { key: 'codeMatch', label: 'CODE MATCH', render: (row) => `${row.codeMatch}%` },
-    { key: 'paperMetric', label: 'PAPER METRIC', render: (row) => `${row.paperMetric}%` },
-    { key: 'reproduced', label: 'REPRODUCED', render: (row) => fmt(row.reproduced, '%') },
-    { key: 'gap', label: 'GAP', render: (row) => fmt(row.gap, ' pp') },
+    { key: 'name', label: 'NAME' },
+    { key: 'confidence', label: 'EXTRACTION CONFIDENCE', render: (row) => display(row.extraction_confidence) },
+    { key: 'metric', label: 'METRIC', render: (row) => display(row.metric) },
+    { key: 'reported', label: 'REPORTED VALUE', render: (row) => display(metricValue(row)) },
+    { key: 'readiness', label: 'READINESS', render: () => 'Not analyzed' },
   ]
+  const loading = Boolean(paperId && loadedPaperId !== paperId)
+  const error = requestError?.paperId === paperId ? requestError.message : ''
 
   const handleRowClick = (row) => {
-    setSelectedExperimentId(row.id)
-    navigate(`/experiments/${row.id}`, { replace: false })
+    setSelectedExperimentId(row.experiment_key || row.experiment_id)
+    navigate(`/experiments/${row.experiment_key || row.experiment_id}`)
   }
 
   return (
     <section className="page">
       <div className="page-kicker">03 / EXPERIMENTS</div>
       <h1 className="page-title">EXPERIMENT INDEX</h1>
-      <SectionHeader title="DETECTED RUNS" meta={`${experiments.length} EXPERIMENTS · SELECTED ${selectedExperimentId}`} />
+      <SectionHeader
+        title="EXTRACTED EXPERIMENTS"
+        meta={loading ? 'LOADING…' : `${rows.length} EXPERIMENTS`}
+      />
+      {!paperId ? <div className="field-hint">Analyze a research paper to view its experiments.</div> : null}
+      {error ? <div className="field-hint error">{error}</div> : null}
       <div className="toolbar">
-        <div className="filters">
-          {filters.map((item) => (
-            <button
-              key={item}
-              className={`filter-chip ${filter === item ? 'active' : ''}`}
-              onClick={() => setFilter(item)}
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
         <Input
           className="search"
           placeholder="SEARCH ID / NAME"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(event) => setQuery(event.target.value)}
         />
       </div>
       <DataTable

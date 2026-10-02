@@ -3,17 +3,20 @@ import { useTheme } from '../../theme'
 import StatusBadge from '../ui/StatusBadge'
 
 export default function Topbar() {
-  const { selectedExperiment } = useExperiment()
+  const { selectedExperiment, selectedExperimentId, codeAnalysis } = useExperiment()
   const { theme, toggleTheme } = useTheme()
-  const paper = Number(selectedExperiment.paperMetric)
-  const paperText = Number.isFinite(paper) ? `${paper.toFixed(2)}%` : 'N/A'
+  const reported = selectedExperiment
+    ? Object.values(selectedExperiment.reported_results || {})[0]
+    : null
+  const paperText = reported?.value ?? reported ?? 'Not available'
+  const readiness = codeAnalysis?.readiness?.overall_score
 
   return (
     <header className="topbar">
       <div className="topbar-left">
         <div className="topbar-title">REPLICAI · TRANSFORMER STUDY</div>
-        <span className={`system-chip ${selectedExperiment.status === 'FAILED' ? 'FAILED' : 'ACTIVE'}`}>
-          {selectedExperiment.status === 'FAILED' ? 'BLOCKED' : 'ACTIVE'}
+        <span className={`system-chip ${selectedExperiment ? 'ACTIVE' : 'FAILED'}`}>
+          {selectedExperiment ? 'ACTIVE' : 'NO PAPER'}
         </span>
         <button type="button" className="theme-toggle" onClick={toggleTheme} aria-label="Toggle color theme">
           {theme === 'dark' ? 'MODE LIGHT' : 'MODE DARK'}
@@ -22,17 +25,17 @@ export default function Topbar() {
       <div className="topbar-meta" aria-label="Study status">
         <div className="topbar-stat">
           <span>EXP</span>
-          <strong>{selectedExperiment.id}</strong>
+          <strong>{selectedExperimentId || '—'}</strong>
         </div>
         <div className="topbar-stat">
           <span>READINESS</span>
-          <strong>{selectedExperiment.readiness}%</strong>
+          <strong>{readiness === undefined ? '—' : `${readiness.toFixed(1)}%`}</strong>
         </div>
         <div className="topbar-stat">
           <span>PAPER</span>
           <strong>{paperText}</strong>
         </div>
-        <StatusBadge status={selectedExperiment.reproducibility || selectedExperiment.status} />
+        {selectedExperiment ? <StatusBadge status={codeAnalysis?.repository?.analysis_status || 'EXTRACTED'} /> : null}
       </div>
     </header>
   )

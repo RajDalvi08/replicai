@@ -48,10 +48,15 @@ function EvidenceGraph({ nodes: initialNodes, edges: initialEdges }) {
     () => decorateEdges(initialEdges, initialNodes),
     [initialEdges, initialNodes],
   )
-  const [nodes, , onNodesChange] = useNodesState(seededNodes)
-  const [edges, , onEdgesChange] = useEdgesState(seededEdges)
+  const [nodes, setNodes, onNodesChange] = useNodesState(seededNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(seededEdges)
   const [toast, setToast] = useState(null)
   const [selected, setSelected] = useState(null)
+
+  useEffect(() => {
+    setNodes(seededNodes)
+    setEdges(seededEdges)
+  }, [seededNodes, seededEdges, setEdges, setNodes])
 
   useEffect(() => {
     return () => {
