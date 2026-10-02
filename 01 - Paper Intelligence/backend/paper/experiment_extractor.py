@@ -109,9 +109,7 @@ def build_experiment_payload(pages: list[dict[str, Any]]) -> list[dict[str, Any]
             }
         ]
 
-    metric_name, metric_value, unit, higher_is_better = _extract_metric_value(
-        combined_text
-    )
+    metric_name, metric_value, unit, higher_is_better = _extract_metric_value(combined_text)
     evidence: list[dict[str, Any]] = []
     fields = {
         "dataset": [

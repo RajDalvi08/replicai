@@ -58,9 +58,7 @@ def get_paper(paper_id: int, db: Annotated[Session, Depends(get_db)]) -> dict:
 
 
 @router.get("/paper/{paper_id}/experiments")
-def get_experiments_for_paper(
-    paper_id: int, db: Annotated[Session, Depends(get_db)]
-) -> list[dict]:
+def get_experiments_for_paper(paper_id: int, db: Annotated[Session, Depends(get_db)]) -> list[dict]:
     paper = db.query(Paper).filter(Paper.id == paper_id).first()
     if paper is None:
         raise HTTPException(
@@ -68,9 +66,7 @@ def get_experiments_for_paper(
             detail={"error": "NOT_FOUND", "message": "Paper not found."},
         )
 
-    records = (
-        db.query(ExperimentRecord).filter(ExperimentRecord.paper_id == paper_id).all()
-    )
+    records = db.query(ExperimentRecord).filter(ExperimentRecord.paper_id == paper_id).all()
     output: list[dict] = []
     for record in records:
         output.append(
@@ -99,9 +95,7 @@ def get_experiments_for_paper(
 
 @router.get("/experiment/{experiment_id}")
 def get_experiment(experiment_id: int, db: Annotated[Session, Depends(get_db)]) -> dict:
-    record = (
-        db.query(ExperimentRecord).filter(ExperimentRecord.id == experiment_id).first()
-    )
+    record = db.query(ExperimentRecord).filter(ExperimentRecord.id == experiment_id).first()
     if record is None:
         raise HTTPException(
             status_code=404,

@@ -1,0 +1,51 @@
+target-version = "py311"
+line-length = 100
+indent-width = 4
+
+# Exclude test fixtures and generated files
+exclude = [
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    "tests/fixtures",
+    "*.pyc",
+    "smoke1.py",
+]
+
+[lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "BLE", # flake8-blind-except
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+    "PLR", # pylint-rules
+    "FURB", # furb
+    "TRY", # tryceratops
+]
+ignore = [
+    "D",   # pydocstyle - we don't enforce docstrings
+    "N802", # function names - we use ast visitor pattern names
+    "BLE001", # blind exception - allowed for defensive coding
+    "FURB188", # removesuffix - Python 3.11 feature
+    "SIM103", # return bool directly - readability preference
+    "TRY004", # TypeError for invalid type - ValueError is fine here
+    "PYI034", # Self return type - not critical
+    "UP037", # quotes in type annotations - Python 3.11 supports this
+]
+
+[lint.isort]
+known-first-party = ["backend"]
+
+[lint.per-file-ignores]
+# Test fixtures are not meant to be linted
+"tests/fixtures/**/*.py" = ["ALL"]
+# Test files can have some relaxed rules
+"tests/**/*.py" = ["F821", "F401", "I001", "UP035"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

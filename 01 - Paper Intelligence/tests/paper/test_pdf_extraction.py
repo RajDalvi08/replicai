@@ -11,9 +11,7 @@ def test_extract_pdf_pages_number_and_text():
     if not pdf_path.exists():
         doc = fitz.open()
         page = doc.new_page()
-        page.insert_text(
-            (72, 72), "Experimental Setup\nBatch size: 64\nLearning rate: 0.01"
-        )
+        page.insert_text((72, 72), "Experimental Setup\nBatch size: 64\nLearning rate: 0.01")
         doc.save(pdf_path)
         doc.close()
 
@@ -35,11 +33,7 @@ def test_empty_pages_warn():
     pages = extract_pdf_pages(pdf_path)
 
     assert len(pages) == 2
-    assert any(
-        "no extractable text" in p["warnings"][0].lower()
-        for p in pages
-        if p["warnings"]
-    )
+    assert any("no extractable text" in p["warnings"][0].lower() for p in pages if p["warnings"])
 
 
 def test_invalid_pdf_raises():

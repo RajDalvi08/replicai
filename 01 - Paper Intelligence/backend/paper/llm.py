@@ -34,9 +34,7 @@ class StructuredLLMAdapter:
             raise LLMExtractionError("LLM response was not a JSON object.")
         return data
 
-    def _request(
-        self, messages: list[dict[str, str]], *, retry: bool
-    ) -> dict[str, Any]:
+    def _request(self, messages: list[dict[str, str]], *, retry: bool) -> dict[str, Any]:
         if not self.is_configured():
             raise LLMExtractionError("LLM configuration is not available.")
 
@@ -64,9 +62,7 @@ class StructuredLLMAdapter:
         with httpx.Client(timeout=30.0) as client:
             response = client.post(url, headers=headers, json=payload)
         if response.status_code >= 400:
-            raise LLMExtractionError(
-                f"LLM request failed with status {response.status_code}."
-            )
+            raise LLMExtractionError(f"LLM request failed with status {response.status_code}.")
 
         payload_data = response.json()
         if "choices" not in payload_data or not payload_data["choices"]:
@@ -104,9 +100,7 @@ class StructuredLLMAdapter:
             experiments = data.get("experiments")
             if not isinstance(experiments, list):
                 if attempt == 1:
-                    raise LLMExtractionError(
-                        "LLM response did not contain an experiments list."
-                    )
+                    raise LLMExtractionError("LLM response did not contain an experiments list.")
                 continue
             return experiments
 
