@@ -79,7 +79,7 @@ export default function ExperimentDetails() {
   const readinessItems = readiness?.items || []
   const metric = reportedMetric(experiment)
   const loading = Boolean(databaseId && loadedDatabaseId !== databaseId)
-  const error = requestError?.databaseId === databaseId ? requestError.message : ''
+  const error = requestError && requestError.databaseId === databaseId ? requestError.message : ''
 
   if (!experiment) {
     return (

@@ -108,7 +108,7 @@ export default function EvidencePage() {
     return { nodes, edges }
   }, [paperAnalysis, selectedExperiment, selectedExperimentId, mappings])
   const loading = Boolean(repositoryId && loadedRequestKey !== requestKey)
-  const error = requestError?.repositoryId === repositoryId ? requestError.message : ''
+  const error = requestError && requestError.repositoryId === repositoryId ? requestError.message : ''
 
   return (
     <section className="page">

@@ -59,7 +59,7 @@ export default function Results() {
   const reproduction = results?.reproduction
   const comparison = results?.comparison
   const loading = Boolean(selectedExperimentId && loadedExperimentId !== selectedExperimentId)
-  const error = requestError?.experimentId === selectedExperimentId ? requestError.message : ''
+  const error = requestError && requestError.experimentId === selectedExperimentId ? requestError.message : ''
   const chartData = useMemo(() => {
     if (!comparison) return []
     return [

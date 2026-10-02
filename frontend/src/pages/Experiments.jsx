@@ -70,7 +70,7 @@ export default function Experiments() {
     { key: 'readiness', label: 'READINESS', render: () => 'Not analyzed' },
   ]
   const loading = Boolean(paperId && loadedPaperId !== paperId)
-  const error = requestError?.paperId === paperId ? requestError.message : ''
+  const error = requestError && requestError.paperId === paperId ? requestError.message : ''
 
   const handleRowClick = (row) => {
     setSelectedExperimentId(row.experiment_key || row.experiment_id)
