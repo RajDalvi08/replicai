@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 
-export default function EvidenceNode({ data, selected }) {
+function EvidenceNode({ data, selected }) {
   return (
     <div className={`evidence-node ${data.state} ${selected ? 'selected' : ''}`}>
       <Handle type="target" position={Position.Top} />
@@ -11,3 +12,5 @@ export default function EvidenceNode({ data, selected }) {
     </div>
   )
 }
+
+export default memo(EvidenceNode)

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Background, Controls, ReactFlow, useEdgesState, useNodesState } from '@xyflow/react'
+import { useTheme } from '../../theme'
 import EvidenceNode from './EvidenceNode'
 
-const nodeTypes = { evidence: EvidenceNode }
+const nodeTypes = { evidence: memo(EvidenceNode) }
 
 const STATUS = {
   verified: 'VERIFIED',
@@ -11,9 +12,9 @@ const STATUS = {
 }
 
 const EDGE_COLOR = {
-  verified: '#22c55e',
-  partial: '#eab308',
-  mismatch: '#ef4444',
+  verified: 'var(--success)',
+  partial: 'var(--warning)',
+  mismatch: 'var(--error)',
 }
 
 function decorateEdges(rawEdges, rawNodes) {
@@ -24,28 +25,42 @@ function decorateEdges(rawEdges, rawNodes) {
       ...edge,
       animated: state === 'partial' || state === 'mismatch',
       style: {
-        stroke: EDGE_COLOR[state] || '#9ca3af',
+        stroke: EDGE_COLOR[state] || 'var(--muted)',
         strokeWidth: state === 'mismatch' ? 2 : 1.5,
       },
     }
   })
 }
 
-export default function EvidenceGraph({ nodes: initialNodes, edges: initialEdges }) {
+function EvidenceGraph({ nodes: initialNodes, edges: initialEdges }) {
+  const { theme } = useTheme()
+  const toastTimerRef = useRef(0)
   const seededNodes = useMemo(
     () => initialNodes.map((node) => ({ ...node, draggable: true, selectable: true })),
     [initialNodes],
   )
-  const seededEdges = useMemo(() => decorateEdges(initialEdges, initialNodes), [initialEdges, initialNodes])
+  const seededEdges = useMemo(
+    () => decorateEdges(initialEdges, initialNodes),
+    [initialEdges, initialNodes],
+  )
   const [nodes, , onNodesChange] = useNodesState(seededNodes)
   const [edges, , onEdgesChange] = useEdgesState(seededEdges)
   const [toast, setToast] = useState(null)
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!toast) return undefined
-    const timer = window.setTimeout(() => setToast(null), 3000)
-    return () => window.clearTimeout(timer)
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 2200)
+    return () => {
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current)
+    }
   }, [toast])
 
   const onNodeClick = useCallback((_, node) => {
@@ -73,7 +88,9 @@ export default function EvidenceGraph({ nodes: initialNodes, edges: initialEdges
           <div className="kicker">{selected.data.kicker}</div>
           <div className="title">{selected.data.title}</div>
           <div className="meta">{selected.data.meta}</div>
-          <div className={`inspect-status ${selected.data.state}`}>{STATUS[selected.data.state]}</div>
+          <div className={`inspect-status ${selected.data.state}`}>
+            {STATUS[selected.data.state] || String(selected.data.state || 'UNKNOWN').toUpperCase()}
+          </div>
         </aside>
       ) : null}
       <ReactFlow
@@ -93,6 +110,7 @@ export default function EvidenceGraph({ nodes: initialNodes, edges: initialEdges
         fitView
         minZoom={0.5}
         maxZoom={1.6}
+        colorMode={theme}
         proOptions={{ hideAttribution: true }}
       >
         <Background color="var(--graph-grid)" gap={22} />
@@ -101,3 +119,5 @@ export default function EvidenceGraph({ nodes: initialNodes, edges: initialEdges
     </div>
   )
 }
+
+export default memo(EvidenceGraph)

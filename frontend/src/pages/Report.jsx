@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useExperiment } from '../experiment'
 import { getReport } from '../data'
+import BrutalCard from '../components/ui/BrutalCard'
 import Button from '../components/ui/Button'
 import SectionHeader from '../components/ui/SectionHeader'
 
 export default function Report() {
-  const report = getReport()
+  const { selectedExperiment } = useExperiment()
+  const report = getReport(selectedExperiment.id)
+  const navigate = useNavigate()
   const [phase, setPhase] = useState('IDLE')
   const timerRef = useRef(0)
 
@@ -13,7 +18,7 @@ export default function Report() {
   const generate = () => {
     if (phase === 'GENERATING') return
     setPhase('GENERATING')
-    timerRef.current = window.setTimeout(() => setPhase('READY'), 1200)
+    timerRef.current = window.setTimeout(() => setPhase('READY'), 700)
   }
 
   const blocks = [
@@ -40,12 +45,34 @@ export default function Report() {
           <div style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>{body}</div>
         </article>
       ))}
-      <Button onClick={generate} disabled={phase === 'GENERATING'}>
-        {phase === 'IDLE' && 'GENERATE REPORT'}
-        {phase === 'GENERATING' && 'GENERATING…'}
-        {phase === 'READY' && 'REPORT READY'}
-      </Button>
-      <div className="feedback">{phase === 'READY' ? 'Draft marked for export (ui mock)' : phase}</div>
+      <div style={{ marginBottom: 12 }}>
+        <Button onClick={generate} disabled={phase === 'GENERATING'}>
+          {phase === 'IDLE' && 'GENERATE REPORT'}
+          {phase === 'GENERATING' && 'GENERATING…'}
+          {phase === 'READY' && 'REPORT READY'}
+        </Button>
+      </div>
+      <div className="feedback">
+        {phase === 'READY'
+          ? 'Draft marked for export (ui mock) · final status PARTIAL — UNDER REVIEW'
+          : phase}
+      </div>
+      <SectionHeader title="WORKFLOW END" meta="RETURN / REVIEW" />
+      <BrutalCard>
+        <div className="kv" style={{ border: 0, padding: 0 }}>
+          <span>Shortcuts</span>
+          <strong>DASHBOARD · EXPERIMENTS · EVIDENCE</strong>
+        </div>
+        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Button onClick={() => navigate('/dashboard')}>BACK TO DASHBOARD</Button>
+          <Button variant="ghost" onClick={() => navigate('/experiments')}>
+            EXPERIMENT INDEX
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/evidence')}>
+            EVIDENCE GRAPH
+          </Button>
+        </div>
+      </BrutalCard>
     </section>
   )
 }

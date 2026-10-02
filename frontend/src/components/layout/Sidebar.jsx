@@ -32,15 +32,15 @@ export default function Sidebar() {
       <div className="sidebar-foot">
         <div className="status-row">
           <span>Project</span>
-          <strong>{project.projectStatus}</strong>
+          <strong className="status-value ok">{project.projectStatus}</strong>
         </div>
         <div className="status-row">
           <span>Repository</span>
-          <strong>{project.repository.status}</strong>
+          <strong className="status-value ok">{project.repository.status}</strong>
         </div>
         <div className="status-row">
           <span>System</span>
-          <strong>{project.systemStatus}</strong>
+          <strong className="status-value ok">{project.systemStatus}</strong>
         </div>
       </div>
     </aside>
