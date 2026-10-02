@@ -1,62 +1,115 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getResults } from '../api/client'
 import { useExperiment } from '../experiment'
-import { getReport } from '../data'
 import BrutalCard from '../components/ui/BrutalCard'
 import Button from '../components/ui/Button'
 import SectionHeader from '../components/ui/SectionHeader'
 
+function display(value) {
+  return value === null || value === undefined || value === '' ? 'Not available' : String(value)
+}
+
 export default function Report() {
-  const { selectedExperiment } = useExperiment()
-  const report = getReport(selectedExperiment.id)
   const navigate = useNavigate()
-  const [phase, setPhase] = useState('IDLE')
-  const timerRef = useRef(0)
+  const {
+    paperAnalysis,
+    selectedExperiment,
+    selectedExperimentId,
+    codeAnalysis,
+    run,
+    validation,
+    results,
+    setResults,
+  } = useExperiment()
+  const [phase, setPhase] = useState(results ? 'READY' : 'IDLE')
+  const [error, setError] = useState('')
 
-  useEffect(() => () => window.clearTimeout(timerRef.current), [])
+  useEffect(() => {
+    if (!selectedExperimentId || results) return
+    let active = true
+    getResults(selectedExperimentId)
+      .then((response) => {
+        if (!active) return
+        setResults(response)
+        setPhase('READY')
+      })
+      .catch((requestError) => {
+        if (!active) return
+        setError(requestError.message || 'Unable to load reproducibility results.')
+        setPhase('ERROR')
+      })
+    return () => {
+      active = false
+    }
+  }, [selectedExperimentId, results, setResults])
 
-  const generate = () => {
-    if (phase === 'GENERATING') return
-    setPhase('GENERATING')
-    timerRef.current = window.setTimeout(() => setPhase('READY'), 700)
-  }
-
+  const paper = results?.paper
+  const reproduction = results?.reproduction
+  const comparison = results?.comparison
   const blocks = [
-    ['PROJECT SUMMARY', report.projectSummary],
-    ['PAPER', `${report.paper} · ${report.paperFile}`],
-    ['REPOSITORY', report.repository],
-    ['SELECTED EXPERIMENT', `${report.experiment.id} — ${report.experiment.name}`],
-    ['READINESS', `${report.readiness}%`],
-    ['EXECUTION SUMMARY', report.executionSummary],
-    ['PAPER VS REPRODUCED METRICS', `Paper ${report.paperResult}% · Reproduced ${report.reproduced}% · Gap ${report.gap} pp`],
-    ['ROOT CAUSE', `${report.rootCause.title} (${report.rootCause.finding})`],
-    ['EVIDENCE', report.evidence.join(' · ')],
-    ['FINAL REPRODUCIBILITY STATUS', report.finalStatus],
+    ['PAPER', paperAnalysis?.filename || 'Not available'],
+    ['PAPER ID', paperAnalysis?.paper_id || 'Not available'],
+    ['SELECTED EXPERIMENT', `${selectedExperimentId || 'Not available'} — ${selectedExperiment?.title || 'Not available'}`],
+    ['REPOSITORY', codeAnalysis?.repository?.url || 'Not analyzed'],
+    ['READINESS', codeAnalysis?.readiness ? `${codeAnalysis.readiness.overall_score.toFixed(1)}% · ${codeAnalysis.readiness.status}` : 'Not available'],
+    ['EXECUTION', run ? `${run.run_id} · ${run.status} · exit ${display(run.exit_code)}` : 'Not run'],
+    ['VALIDATION', validation ? `${validation.runs?.length || 0} runs · ${validation.status}` : 'Not validated'],
+    ['PAPER RESULT', `${display(paper?.metric)} · ${display(paper?.reported_value)}`],
+    ['REPRODUCTION', `${display(reproduction?.metric)} · mean ${display(reproduction?.mean)} · std ${display(reproduction?.std)}`],
+    ['COMPARISON', comparison ? `${comparison.status} · difference ${display(comparison.absolute_difference)} · relative ${display(comparison.relative_difference_percent)}%` : 'Not available'],
   ]
+  const displayedPhase =
+    phase === 'IDLE' && selectedExperimentId && !results ? 'LOADING' : phase
+
+  const generate = async () => {
+    if (!selectedExperimentId) {
+      setError('Analyze a paper and select an experiment before generating results.')
+      return
+    }
+    setError('')
+    setPhase('GENERATING')
+    try {
+      const response = await getResults(selectedExperimentId)
+      setResults(response)
+      setPhase('READY')
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to load reproducibility results.')
+      setPhase('ERROR')
+    }
+  }
 
   return (
     <section className="page">
       <div className="page-kicker">09 / EXPORT</div>
       <h1 className="page-title">REPRODUCIBILITY REPORT</h1>
-      <SectionHeader title="PREVIEW" meta={phase} />
+      {error ? <div className="field-hint error">{error}</div> : null}
+      <SectionHeader title="PREVIEW" meta={displayedPhase} />
       {blocks.map(([title, body]) => (
         <article className="report-block" key={title}>
           <h3>{title}</h3>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>{body}</div>
         </article>
       ))}
+      {results?.explanation?.length ? (
+        <>
+          <SectionHeader title="BACKEND EXPLANATION" />
+          <BrutalCard>
+            {results.explanation.map((item, index) => (
+              <div className="kv" key={`${item.parameter || item.category || 'detail'}-${index}`}>
+                <span>{display(item.parameter || item.category)} · {display(item.status)}</span>
+                <strong>{display(item.reason || item.message)}</strong>
+              </div>
+            ))}
+          </BrutalCard>
+        </>
+      ) : null}
       <div style={{ marginBottom: 12 }}>
-        <Button onClick={generate} disabled={phase === 'GENERATING'}>
-          {phase === 'IDLE' && 'GENERATE REPORT'}
-          {phase === 'GENERATING' && 'GENERATING…'}
-          {phase === 'READY' && 'REPORT READY'}
+        <Button onClick={generate} disabled={phase === 'GENERATING' || displayedPhase === 'LOADING'}>
+          {phase === 'GENERATING' || displayedPhase === 'LOADING' ? 'LOADING RESULTS…' : phase === 'READY' ? 'REFRESH RESULTS' : 'LOAD FINAL RESULTS'}
         </Button>
       </div>
-      <div className="feedback">
-        {phase === 'READY'
-          ? 'Draft marked for export (ui mock) · final status PARTIAL — UNDER REVIEW'
-          : phase}
-      </div>
+      <div className="feedback">{phase === 'READY' ? 'Report populated from ReplicAI backend results.' : phase}</div>
       <SectionHeader title="WORKFLOW END" meta="RETURN / REVIEW" />
       <BrutalCard>
         <div className="kv" style={{ border: 0, padding: 0 }}>
@@ -65,12 +118,8 @@ export default function Report() {
         </div>
         <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Button onClick={() => navigate('/dashboard')}>BACK TO DASHBOARD</Button>
-          <Button variant="ghost" onClick={() => navigate('/experiments')}>
-            EXPERIMENT INDEX
-          </Button>
-          <Button variant="ghost" onClick={() => navigate('/evidence')}>
-            EVIDENCE GRAPH
-          </Button>
+          <Button variant="ghost" onClick={() => navigate('/experiments')}>EXPERIMENT INDEX</Button>
+          <Button variant="ghost" onClick={() => navigate('/evidence')}>EVIDENCE GRAPH</Button>
         </div>
       </BrutalCard>
     </section>

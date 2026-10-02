@@ -1,16 +1,40 @@
-# React + Vite
+# ReplicAI frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The frontend uses the ReplicAI backend APIs. Configure the API base URL in
+`.env` (copy `.env.example` to `.env` when setting up a new checkout):
 
-Currently, two official plugins are available:
+```env
+VITE_API_URL=http://localhost:8001
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Start the ReplicAI backend
 
-## React Compiler
+In PowerShell:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```powershell
+Set-Location "C:\Users\Raj\Downloads\replicai - prototype\replicai-ninad\01 - Paper Intelligence"
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn backend.main:app --reload --port 8001
+```
 
-## Expanding the Oxlint configuration
+Use port `8001`; port `8000` may belong to a separate service. Confirm the
+backend is available at <http://localhost:8001/health> and inspect its API at
+<http://localhost:8001/docs>.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Start the frontend
+
+In another PowerShell window:
+
+```powershell
+Set-Location "C:\Users\Raj\Downloads\replicai - prototype\replicai\frontend"
+npm install
+npm run dev
+```
+
+Vite reads `VITE_API_URL` at startup. Restart the dev server after changing
+`.env`.
+
+The UI's primary flow is paper upload and experiment extraction, repository
+analysis, readiness and evidence review, execution and polling, three-run
+validation, and final results from the ReplicAI backend.

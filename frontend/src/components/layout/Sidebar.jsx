@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
-import { getProject } from '../../data'
+import { useExperiment } from '../../experiment'
 
 const links = [
   { to: '/dashboard', num: '01', label: 'Dashboard' },
@@ -13,7 +13,7 @@ const links = [
 ]
 
 export default function Sidebar() {
-  const project = getProject()
+  const { paperId, repositoryId, codeAnalysis } = useExperiment()
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar-collapsed')
     return saved === 'true'
@@ -57,15 +57,15 @@ export default function Sidebar() {
       <div className="sidebar-foot">
         <div className="status-row">
           <span>Project</span>
-          <strong className="status-value ok">{project.projectStatus}</strong>
+          <strong className={`status-value ${paperId ? 'ok' : ''}`}>{paperId ? 'ANALYZED' : 'NOT STARTED'}</strong>
         </div>
         <div className="status-row">
           <span>Repository</span>
-          <strong className="status-value ok">{project.repository.status}</strong>
+          <strong className={`status-value ${repositoryId ? 'ok' : ''}`}>{codeAnalysis?.repository?.analysis_status || 'NOT ANALYZED'}</strong>
         </div>
         <div className="status-row">
           <span>System</span>
-          <strong className="status-value ok">{project.systemStatus}</strong>
+          <strong className="status-value">{repositoryId ? `REPO ${repositoryId}` : 'READY'}</strong>
         </div>
       </div>
     </aside>

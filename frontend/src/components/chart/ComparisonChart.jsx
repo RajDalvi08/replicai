@@ -31,7 +31,7 @@ function buildTooltipContent(palette, active, payload, label) {
     >
       <div style={{ marginBottom: 2, color: palette.tooltipText, fontSize: 11 }}>{label}</div>
       <div style={{ color: palette.tooltipText, fontSize: 11 }}>
-        metric: <strong>{value}%</strong>
+        metric: <strong>{value}</strong>
       </div>
     </div>
   )
@@ -83,7 +83,7 @@ export default function ComparisonChart({ data }) {
           />
           <YAxis
             stroke={palette.axis}
-            domain={[80, 90]}
+            domain={['dataMin - 1', 'dataMax + 1']}
             tick={{ fill: palette.tick, fontFamily: 'JetBrains Mono', fontSize: 11 }}
           />
           <Tooltip

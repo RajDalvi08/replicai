@@ -1,97 +1,86 @@
 import { useNavigate } from 'react-router-dom'
 import { useExperiment } from '../experiment'
-import { getProject, getRootCause, getRuns } from '../data'
 import BrutalCard from '../components/ui/BrutalCard'
 import Button from '../components/ui/Button'
 import MetricCard from '../components/ui/MetricCard'
-import ProgressBar from '../components/ui/ProgressBar'
 import SectionHeader from '../components/ui/SectionHeader'
-import StatusBadge from '../components/ui/StatusBadge'
+
+function display(value) {
+  return value === null || value === undefined || value === '' ? 'Not available' : String(value)
+}
 
 export default function RootCause() {
-  const { selectedExperiment } = useExperiment()
-  const root = getRootCause(selectedExperiment.id)
-  const project = getProject()
-  const runs = getRuns(selectedExperiment.id)
+  const { selectedExperimentId, results, codeAnalysis, validation } = useExperiment()
   const navigate = useNavigate()
-  const hasGap = typeof selectedExperiment.gap === 'number' && Number.isFinite(selectedExperiment.gap)
+  const explanations = results?.explanation || []
+  const mappings = codeAnalysis?.mappings || []
+  const mainFinding = explanations[0] || mappings[0] || null
+  const comparison = results?.comparison
 
   return (
     <section className="page">
-      <div className="page-kicker">08 / DEBUG</div>
-      <h1 className="page-title">{selectedExperiment.id} · ROOT CAUSE ANALYSIS</h1>
+      <div className="page-kicker">08 / EXPLANATION</div>
+      <h1 className="page-title">{selectedExperimentId || 'EXPERIMENT'} · EXPLANATION</h1>
       <p className="page-copy" style={{ marginBottom: 10 }}>
-        {selectedExperiment.summary}
-        {' '}
-        Reproduction gap between paper ({Number(selectedExperiment.paperMetric).toFixed(2)}%) and reproduced ({runs.mean === 'N/A' ? 'not available' : `${runs.mean}%`})
-        is traced to a parameter-level difference between paper claims and checked-out repository configuration.
+        Findings below are returned by ReplicAI Code Intelligence and Execution APIs; no frontend-generated cause is substituted.
       </p>
       <div className="grid-metrics">
-        <MetricCard label="MAIN FINDING" value={root.title} tone="warn" />
-        <MetricCard label="PAPER" value={root.paperValue} />
-        <MetricCard label="CODE" value={root.codeValue} tone="warn" />
-        <MetricCard label="CONFIDENCE" value={root.confidence} />
-        <MetricCard label="GAP" value={hasGap ? `${selectedExperiment.gap} pp` : '—'} />
-        <MetricCard label="STATUS" value={<StatusBadge status={selectedExperiment.reproducibility || selectedExperiment.status} />} />
+        <MetricCard label="MAIN FINDING" value={mainFinding ? `${mainFinding.parameter || mainFinding.category || 'Mapping'} · ${mainFinding.status || 'detail'}` : 'Not available'} tone="warn" />
+        <MetricCard label="PAPER VALUE" value={display(comparison?.paper_value)} />
+        <MetricCard label="REPRODUCED VALUE" value={display(comparison?.reproduced_value)} />
+        <MetricCard label="CONFIDENCE" value={mainFinding?.confidence === undefined ? 'Not available' : `${Math.round(mainFinding.confidence * 100)}%`} />
+        <MetricCard label="VALIDATION" value={validation?.status || 'Not validated'} />
+        <MetricCard label="COMPARISON" value={comparison?.status || 'Not available'} />
       </div>
-      <SectionHeader title="ROOT CAUSE" meta={root.finding} />
-      <BrutalCard>
-        <p className="page-copy" style={{ margin: 0 }}>
-          {root.impact}
-        </p>
-      </BrutalCard>
-      <SectionHeader title="EVIDENCE" />
+      <SectionHeader title="BACKEND EXPLANATION" meta={mainFinding?.parameter || 'NOT AVAILABLE'} />
+      {explanations.length ? (
+        <BrutalCard>
+          {explanations.map((item, index) => (
+            <div className="kv" key={`${item.parameter || item.category || 'explanation'}-${index}`}>
+              <span>{display(item.parameter || item.category)} · {display(item.status)}</span>
+              <strong>
+                {display(item.reason || item.message)}
+                {item.paper_value !== undefined ? ` · paper ${display(item.paper_value)}` : ''}
+                {item.code_value !== undefined ? ` · code ${display(item.code_value)}` : ''}
+                {item.confidence !== undefined ? ` · ${Math.round(item.confidence * 100)}% confidence` : ''}
+              </strong>
+            </div>
+          ))}
+        </BrutalCard>
+      ) : (
+        <div className="field-hint">No backend explanation is available. Run validation to generate comparison evidence.</div>
+      )}
+      <SectionHeader title="MAPPING EVIDENCE" />
       <div className="split">
-        <BrutalCard>
-          <div className="metric-label" style={{ color: 'var(--muted)' }}>PAPER</div>
-          <div className="metric-value" style={{ fontSize: 20, color: 'var(--text)' }}>
-            {root.evidence.paper}
-          </div>
-          <ProgressBar value={100} />
-          <div className="kv" style={{ marginTop: 8 }}>
-            <span>Source</span>
-            <strong>{project.paperFile} · §5.1</strong>
-          </div>
-        </BrutalCard>
-        <BrutalCard>
-          <div className="metric-label" style={{ color: 'var(--muted)' }}>CODE</div>
-          <div className="metric-value" style={{ fontSize: 20, color: 'var(--warning)' }}>
-            {root.evidence.code}
-          </div>
-          <ProgressBar value={50} />
-          <div className="kv" style={{ marginTop: 8 }}>
-            <span>Source</span>
-            <strong>config.yaml · line 17</strong>
-          </div>
-        </BrutalCard>
+        {mappings.length ? mappings.map((mapping, index) => (
+          <BrutalCard key={`${mapping.paper_field}-${index}`}>
+            <div className="metric-label" style={{ color: 'var(--muted)' }}>{mapping.paper_field} · {mapping.status}</div>
+            <div className="metric-value" style={{ fontSize: 20, color: 'var(--text)' }}>
+              {display(mapping.paper_value)} ↔ {display(mapping.code_value)}
+            </div>
+            <div className="kv"><span>Reason</span><strong>{display(mapping.reason)}</strong></div>
+            <div className="kv"><span>Confidence</span><strong>{Math.round((mapping.confidence || 0) * 100)}%</strong></div>
+            {mapping.evidence ? (
+              <div className="kv">
+                <span>Code evidence</span>
+                <strong>
+                  {mapping.evidence.file}
+                  {mapping.evidence.line_start ? `:${mapping.evidence.line_start}` : ''}
+                  {mapping.evidence.quote ? ` · “${mapping.evidence.quote}”` : ''}
+                </strong>
+              </div>
+            ) : null}
+          </BrutalCard>
+        )) : <div className="field-hint">No repository mapping evidence is available.</div>}
       </div>
-      <SectionHeader title="EVIDENCE CHAIN" />
-      <div className="chain">
-        {root.chain.map((item, index) => (
-          <span key={item.id} style={{ display: 'contents' }}>
-            <button
-              type="button"
-              className="chain-node"
-              style={{ color: 'var(--text)' }}
-              onClick={() => navigate('/evidence')}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') navigate('/evidence')
-              }}
-            >
-              {item.label}
-            </button>
-            {index < root.chain.length - 1 ? <span className="workflow-arrow">↓</span> : null}
-          </span>
-        ))}
-      </div>
-      <SectionHeader title="NEXT STEP" meta="09 / EXPORT" />
+      <SectionHeader title="NEXT STEP" meta="09 / REPORT" />
       <BrutalCard>
         <div className="kv" style={{ border: 0, padding: 0 }}>
           <span>Pipeline</span>
-          <strong>ROOT CAUSE → REPORT (EXPORT)</strong>
+          <strong>EXPLANATION → REPORT</strong>
         </div>
         <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Button onClick={() => navigate('/report')}>GENERATE REPORT</Button>
+          <Button onClick={() => navigate('/report')}>OPEN REPORT</Button>
           <Button variant="ghost" onClick={() => navigate('/evidence')}>REVIEW EVIDENCE</Button>
         </div>
       </BrutalCard>
