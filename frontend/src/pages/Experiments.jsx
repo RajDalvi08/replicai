@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getExperiments, getProject } from '../data'
+import { useExperiment } from '../experiment'
+import { getExperiments } from '../data'
 import DataTable from '../components/ui/DataTable'
 import Input from '../components/ui/Input'
 import SectionHeader from '../components/ui/SectionHeader'
@@ -14,8 +15,8 @@ function fmt(value, suffix = '') {
 
 export default function Experiments() {
   const navigate = useNavigate()
-  const project = getProject()
   const experiments = getExperiments()
+  const { selectedExperimentId, setSelectedExperimentId } = useExperiment()
   const [filter, setFilter] = useState('ALL')
   const [query, setQuery] = useState('')
 
@@ -38,11 +39,16 @@ export default function Experiments() {
     { key: 'gap', label: 'GAP', render: (row) => fmt(row.gap, ' pp') },
   ]
 
+  const handleRowClick = (row) => {
+    setSelectedExperimentId(row.id)
+    navigate(`/experiments/${row.id}`, { replace: false })
+  }
+
   return (
     <section className="page">
       <div className="page-kicker">03 / EXPERIMENTS</div>
       <h1 className="page-title">EXPERIMENT INDEX</h1>
-      <SectionHeader title="DETECTED RUNS" meta={`${experiments.length} EXPERIMENTS`} />
+      <SectionHeader title="DETECTED RUNS" meta={`${experiments.length} EXPERIMENTS · SELECTED ${selectedExperimentId}`} />
       <div className="toolbar">
         <div className="filters">
           {filters.map((item) => (
@@ -56,13 +62,18 @@ export default function Experiments() {
             </button>
           ))}
         </div>
-        <Input className="search" placeholder="SEARCH ID / NAME" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Input
+          className="search"
+          placeholder="SEARCH ID / NAME"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
       <DataTable
         columns={columns}
         rows={rows}
-        selectedId={project.selectedExperimentId}
-        onRowClick={(row) => navigate(`/experiments/${row.id}`)}
+        selectedId={selectedExperimentId}
+        onRowClick={handleRowClick}
       />
     </section>
   )

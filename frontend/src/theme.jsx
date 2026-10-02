@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'replicai-theme'
 const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {} })
@@ -15,28 +15,44 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme)
 }
 
-export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    const initial = readStoredTheme()
-    applyTheme(initial)
-    return initial
-  })
+const resolvedInitialTheme = (() => {
+  const theme = readStoredTheme()
+  if (typeof document !== 'undefined') applyTheme(theme)
+  return theme
+})()
 
-  useEffect(() => {
-    applyTheme(theme)
-    try {
-      localStorage.setItem(STORAGE_KEY, theme)
-    } catch {
-      /* ignore quota / private mode */
-    }
-  }, [theme])
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(resolvedInitialTheme)
+
+  const toggleTheme = useMemo(
+    () => () => {
+      setTheme((current) => {
+        const next = current === 'dark' ? 'light' : 'dark'
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.add('theme-swap')
+          applyTheme(next)
+          try {
+            localStorage.setItem(STORAGE_KEY, next)
+          } catch {
+            /* ignore quota / private mode */
+          }
+          const raf1 = requestAnimationFrame(() => {
+            const raf2 = requestAnimationFrame(() => {
+              document.documentElement.classList.remove('theme-swap')
+            })
+            window.setTimeout(() => cancelAnimationFrame(raf2), 60)
+          })
+          window.setTimeout(() => cancelAnimationFrame(raf1), 60)
+        }
+        return next
+      })
+    },
+    [],
+  )
 
   const value = useMemo(
-    () => ({
-      theme,
-      toggleTheme: () => setTheme((current) => (current === 'dark' ? 'light' : 'dark')),
-    }),
-    [theme],
+    () => ({ theme, toggleTheme }),
+    [theme, toggleTheme],
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

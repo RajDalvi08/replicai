@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getProject } from '../data'
+import { useExperiment } from '../experiment'
+import { getProject, getRootCause, getRuns } from '../data'
 import BrutalCard from '../components/ui/BrutalCard'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import MetricCard from '../components/ui/MetricCard'
+import ProgressBar from '../components/ui/ProgressBar'
+import SectionHeader from '../components/ui/SectionHeader'
+import StatusBadge from '../components/ui/StatusBadge'
 
 const GITHUB_PATTERN = /github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/i
 
@@ -14,14 +19,32 @@ function validateGithub(url) {
   return ''
 }
 
+function fmt(value, suffix = '') {
+  return value === null || value === undefined || value === 'N/A' ? '—' : `${value}${suffix}`
+}
+
 export default function Landing() {
+  const { selectedExperiment } = useExperiment()
   const project = getProject()
+  const runs = getRuns(selectedExperiment.id)
+  const root = getRootCause(selectedExperiment.id)
   const navigate = useNavigate()
+  const runValues = runs.items.map((item) => item.accuracy.replace('%', '')).join(' / ') || '—'
   const [paperName, setPaperName] = useState('')
   const [repo, setRepo] = useState(project.repository.url)
   const [repoError, setRepoError] = useState('')
   const [analyze, setAnalyze] = useState('IDLE')
   const timerRef = useRef(0)
+
+  const snapshot = useMemo(
+    () => [
+      { label: 'EXPERIMENT', value: selectedExperiment.id },
+      { label: 'RUNS', value: `${runs.runCount} · ${runValues}` },
+      { label: 'ROOT CAUSE', value: root.title, tone: 'warn' },
+      { label: 'STATUS', value: <StatusBadge status={selectedExperiment.reproducibility || selectedExperiment.status || 'UNDER REVIEW'} /> },
+    ],
+    [selectedExperiment.id, selectedExperiment.reproducibility, selectedExperiment.status, root.title, runs.runCount, runValues],
+  )
 
   useEffect(() => () => window.clearTimeout(timerRef.current), [])
 
@@ -33,7 +56,7 @@ export default function Landing() {
     timerRef.current = window.setTimeout(() => {
       setAnalyze('COMPLETE')
       navigate('/dashboard')
-    }, 1200)
+    }, 900)
   }
 
   return (
@@ -54,6 +77,61 @@ export default function Landing() {
               </span>
             ))}
           </div>
+          <SectionHeader title="CURRENT REPRODUCTION SNAPSHOT" meta="UI DEMO DATA" style={{ marginTop: 22 }} />
+          <div className="grid-metrics" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', marginTop: 4 }}>
+            {snapshot.map((card) => (
+              <MetricCard key={card.label} label={card.label} value={card.value} tone={card.tone || ''} />
+            ))}
+          </div>
+          <BrutalCard style={{ marginTop: 12 }}>
+            <div className="kv" style={{ border: 0, paddingTop: 0 }}>
+              <span>Readiness</span>
+              <strong>{selectedExperiment.readiness}% · {project.papers} paper · {project.experimentCount} experiments</strong>
+            </div>
+            <ProgressBar value={selectedExperiment.readiness} />
+            <div className="split" style={{ marginTop: 12 }}>
+              <div>
+                <div className="metric-label">PAPER METRIC</div>
+                <div className="metric-value" style={{ fontSize: 22 }}>
+                  {Number(selectedExperiment.paperMetric).toFixed(2)}%
+                </div>
+              </div>
+              <div>
+                <div className="metric-label">REPRODUCED</div>
+                <div
+                  className="metric-value"
+                  style={{
+                    fontSize: 22,
+                    color: runs.mean === 'N/A' ? 'var(--muted)' : 'var(--success)',
+                  }}
+                >
+                  {fmt(runs.mean, runs.mean === 'N/A' ? '' : '%')}
+                </div>
+              </div>
+            </div>
+            <div className="kv" style={{ marginTop: 8 }}>
+              <span>Gap</span>
+              <strong style={{ color: 'var(--warning)' }}>
+                {fmt(typeof runs.gap === 'number' ? runs.gap : null, ' pp')}
+                {runs.std !== 'N/A' && typeof runs.std === 'number' ? ` · mean ± ${runs.std.toFixed(2)}% std` : ''}
+              </strong>
+            </div>
+            <div className="kv">
+              <span>Root Cause</span>
+              <strong>{root.evidence.paper} vs {root.evidence.code}</strong>
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+                OPEN DASHBOARD
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/evidence')}>
+                EVIDENCE GRAPH
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/results')}>
+                RESULTS
+              </Button>
+            </div>
+          </BrutalCard>
         </div>
         <BrutalCard>
           <SectionBlock title="RESEARCH PAPER" meta="PDF">
@@ -96,7 +174,7 @@ export default function Landing() {
             {analyze === 'COMPLETE' && 'COMPLETE'}
           </Button>
           <div className="feedback">
-            {paperName ? `PAPER ${paperName}` : 'PAPER mock paper.pdf'} · {analyze}
+            {paperName ? `PAPER ${paperName}` : `PAPER ${project.paperFile}`} · {analyze}
           </div>
         </BrutalCard>
       </div>
