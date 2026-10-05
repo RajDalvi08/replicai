@@ -20,13 +20,28 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value))
 }
 
+function buildMockExperiments() {
+  return mockExperiments.map((experiment) => ({
+    ...clone(experiment),
+    experiment_id: experiment.id,
+    experiment_key: experiment.id,
+    title: experiment.name,
+    description: experiment.summary,
+    metric: 'BLEU',
+    extraction_confidence: 0.95,
+    reported_results: {
+      primary: { value: experiment.paperMetric, metric: 'BLEU' },
+    },
+  }))
+}
+
 function buildMockPaperAnalysis() {
   return {
     paper_id: 'mock-paper-1',
     filename: 'paper.pdf',
     page_count: 12,
     warnings: ['Using locally bundled mock data while the backend is unavailable.'],
-    experiments: clone(mockExperiments),
+    experiments: buildMockExperiments(),
   }
 }
 
@@ -291,7 +306,7 @@ function getMockFallback(path, options = {}) {
   }
 
   if (maybePath.startsWith('/api/v1/paper/') && maybePath.endsWith('/experiments')) {
-    return clone(mockExperiments)
+    return buildMockExperiments()
   }
 
   if (maybePath.startsWith('/api/v1/paper/')) {

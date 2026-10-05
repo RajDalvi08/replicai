@@ -13,7 +13,7 @@ const WORKFLOW = ['PAPER', 'EXPERIMENT', 'CODE', 'EXECUTION', 'COMPARISON', 'ROO
 const GITHUB_PATTERN = /github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/i
 
 function experimentKey(experiment) {
-  return experiment?.experiment_key || experiment?.experiment_id || ''
+  return experiment?.experiment_key || experiment?.experiment_id || experiment?.id || ''
 }
 
 function reportedMetric(experiment) {

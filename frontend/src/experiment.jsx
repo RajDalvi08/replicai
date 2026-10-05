@@ -14,7 +14,7 @@ function readState() {
 }
 
 function experimentKey(experiment) {
-  return experiment?.experiment_key || experiment?.experiment_id || ''
+  return experiment?.experiment_key || experiment?.experiment_id || experiment?.id || ''
 }
 
 export function ExperimentProvider({ children }) {
