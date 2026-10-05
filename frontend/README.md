@@ -38,3 +38,9 @@ Vite reads `VITE_API_URL` at startup. Restart the dev server after changing
 The UI's primary flow is paper upload and experiment extraction, repository
 analysis, readiness and evidence review, execution and polling, three-run
 validation, and final results from the ReplicAI backend.
+
+The frontend automatically checks the backend health endpoint on startup and
+falls back to the bundled mock dataset if the backend is offline or unreachable.
+This keeps the prototype usable in public deployments before the backend is
+available. For manual testing, set `VITE_FORCE_DEMO=true` to force mock data,
+while the default `VITE_FORCE_DEMO=false` keeps the automatic detection flow.
