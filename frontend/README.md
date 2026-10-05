@@ -44,3 +44,7 @@ falls back to the bundled mock dataset if the backend is offline or unreachable.
 This keeps the prototype usable in public deployments before the backend is
 available. For manual testing, set `VITE_FORCE_DEMO=true` to force mock data,
 while the default `VITE_FORCE_DEMO=false` keeps the automatic detection flow.
+
+The Report page can download a client-generated PDF from the current experiment,
+analysis, and result state. PDF generation uses jsPDF and works with either
+live backend responses or the automatic mock-data fallback.

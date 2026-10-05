@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getResults } from '../api/client'
 import { useExperiment } from '../experiment'
@@ -24,6 +24,14 @@ export default function Report() {
   } = useExperiment()
   const [phase, setPhase] = useState(results ? 'READY' : 'IDLE')
   const [error, setError] = useState('')
+  const [downloading, setDownloading] = useState(false)
+  const [downloadedExperimentId, setDownloadedExperimentId] = useState('')
+  const [downloadError, setDownloadError] = useState('')
+  const downloadTimer = useRef(null)
+
+  useEffect(() => () => {
+    if (downloadTimer.current) window.clearTimeout(downloadTimer.current)
+  }, [])
 
   useEffect(() => {
     if (!selectedExperimentId || results) return
@@ -79,6 +87,32 @@ export default function Report() {
     }
   }
 
+  const downloadReport = async () => {
+    if (!selectedExperiment || downloading) return
+    setDownloading(true)
+    setDownloadedExperimentId('')
+    setDownloadError('')
+    try {
+      const { downloadExperimentReport } = await import('../utils/reportPdf')
+      downloadExperimentReport({
+        experiment: selectedExperiment,
+        experimentId: selectedExperimentId,
+        paperAnalysis,
+        codeAnalysis,
+        run,
+        validation,
+        results,
+      })
+      setDownloadedExperimentId(selectedExperimentId)
+      if (downloadTimer.current) window.clearTimeout(downloadTimer.current)
+      downloadTimer.current = window.setTimeout(() => setDownloadedExperimentId(''), 2500)
+    } catch {
+      setDownloadError('Unable to generate the report. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return (
     <section className="page">
       <div className="page-kicker">09 / EXPORT</div>
@@ -104,11 +138,18 @@ export default function Report() {
           </BrutalCard>
         </>
       ) : null}
-      <div style={{ marginBottom: 12 }}>
+      <div className="toolbar" style={{ marginTop: 14 }}>
         <Button onClick={generate} disabled={phase === 'GENERATING' || displayedPhase === 'LOADING'}>
           {phase === 'GENERATING' || displayedPhase === 'LOADING' ? 'LOADING RESULTS…' : phase === 'READY' ? 'REFRESH RESULTS' : 'LOAD FINAL RESULTS'}
         </Button>
+        <Button onClick={downloadReport} disabled={!selectedExperiment || downloading}>
+          {downloading ? 'GENERATING REPORT…' : downloadedExperimentId && downloadedExperimentId === selectedExperimentId ? 'REPORT DOWNLOADED' : 'DOWNLOAD REPORT'}
+        </Button>
       </div>
+      {downloadError ? <div className="field-hint error" role="alert">{downloadError}</div> : null}
+      {downloadedExperimentId && downloadedExperimentId === selectedExperimentId ? (
+        <div className="field-hint ok" role="status" aria-live="polite">Report downloaded successfully.</div>
+      ) : null}
       <div className="feedback">{phase === 'READY' ? 'Report populated from ReplicAI backend results.' : phase}</div>
       <SectionHeader title="WORKFLOW END" meta="RETURN / REVIEW" />
       <BrutalCard>
