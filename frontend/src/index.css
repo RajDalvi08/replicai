@@ -2123,3 +2123,113 @@ textarea {
     transition: none;
   }
 }
+
+/* Prevent long labels and content values from widening shared page layouts. */
+.app-shell {
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+}
+
+.page,
+.page > *,
+.page article,
+.page .brutal-card,
+.page .report-block,
+.page .grid-metrics > *,
+.page .two-col > *,
+.page .three-col > *,
+.page .split > *,
+.page .kv > *,
+.topbar,
+.topbar > *,
+.topbar-left > *,
+.topbar-meta > *,
+.sidebar,
+.sidebar > *,
+.status-row > * {
+  min-width: 0;
+}
+
+.page h1,
+.page h2,
+.page h3,
+.page p,
+.page span,
+.page strong,
+.page label,
+.page td,
+.page th,
+.page li,
+.page .feedback,
+.page .field-hint,
+.topbar-title,
+.topbar-stat strong,
+.status-row strong,
+.logo-kicker,
+.logo-sub {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.page .kv {
+  grid-template-columns: minmax(0, min(140px, 40%)) minmax(0, 1fr);
+}
+
+.page .kv > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.page .toolbar > *,
+.page .btn,
+.page .field,
+.page .field input,
+.page .field select,
+.page .field textarea,
+.page select,
+.page textarea,
+.page .brutal-card,
+.page .report-block {
+  max-width: 100%;
+}
+
+.page pre,
+.page code,
+.page .terminal,
+.page .report-block > div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.sidebar .status-row {
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+}
+
+.sidebar .status-row strong {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nav {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .nav-item,
+  .sidebar.collapsed .nav-item {
+    flex: 1 1 160px;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .nav-label,
+  .sidebar.collapsed .nav-label {
+    max-width: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
